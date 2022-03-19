@@ -292,7 +292,6 @@
 
             contactList.innerHTML = data;
 
-           
             $("button.delete").on("click", function()
             {
                 if(confirm("Are you sure?"))
@@ -314,7 +313,6 @@
         {
             LoadLink("edit", "add");
         });
-
     }
 
     function DisplayEditPage()
