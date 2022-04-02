@@ -1,6 +1,8 @@
 import express from 'express';
 const router = express.Router();
 
+import Contact from "../Models/contact";
+
 /* GET home page. */
 router.get('/', function(req, res, next) 
 {
@@ -54,12 +56,116 @@ router.get('/register', function(req, res, next)
 /* GET contact-list page. */
 router.get('/contact-list', function(req, res, next) 
 {
-  res.render('index', { title: 'Contact List', page: 'contact-list', displayName: '' });
+  Contact.find(function(err, contactsCollection)
+  {
+    if(err)
+    {
+      console.error(err);
+      res.end(err);
+    }
+    res.render('index', { title: 'Contact List', page: 'contact-list', contacts: contactsCollection,  displayName: '' });
+  });
+  
+  
 });
 
-router.get('/edit', function(req, res, next) 
+/* Display the Add Page */
+router.get('/add', function(req, res, next) 
 {
-  res.render('index', { title: 'Edit Contact', page: 'edit', displayName: '' });
+  res.render('index', { title: 'Add', page: 'edit', contact: '', displayName: '' });
+});
+
+/* Process the Add Request */
+router.post('/add', function(req, res, next) 
+{
+  // instantiate a new  contact to add
+  let newContact = new Contact
+  ({
+    "FullName": req.body.fullName,
+    "ContactNumber": req.body.contactNumber,
+    "EmailAddress": req.body.emailAddress
+  });
+
+  // insert contact into db
+  Contact.create(newContact, function(err: ErrorCallback)
+  {
+    if(err)
+    {
+      console.error(err);
+      res.end(err);
+    }
+
+    // newContact has been added to the db -> go to the contact-list
+    res.redirect('/contact-list');
+  })
+});
+
+router.get('/edit/:id', function(req, res, next) 
+{
+  let id = req.params.id;
+
+  Contact.findById(id, {}, {}, function(err, contactToEdit)
+  {
+    if (err)
+    {
+      console.error(err);
+      res.end(err);
+    }
+    res.render('index', { title: 'Edit', page: 'edit', contact: contactToEdit, displayName: '' });
+
+  });
+  
+
+  
+});
+
+
+router.post('/edit/:id', function(req, res, next) 
+{
+  let id = req.params.id;
+
+  let updatedContact = new Contact  
+  ({
+    "_id": id,
+    "FullName": req.body.fullName,
+    "ContactNumber": req.body.contactNumber,
+    "EmailAddress": req.body.emailAddress
+  });
+  
+  Contact.updateOne({_id:id}, updatedContact, function(err: ErrorCallback)
+  {
+    if (err)
+    {
+      console.error(err);
+      res.end(err);
+    }
+    res.redirect('/contact-list');
+
+  });
+  
+  
+
+  
+});
+
+
+router.get('/delete/:id', function(req, res, next) 
+{
+  let id = req.params.id;
+
+  Contact.remove({_id: id}, function(err)
+  {
+    if (err)
+    {
+      console.error(err);
+      res.end(err);
+    }
+    res.redirect('/contact-list');
+
+  });
+  
+
+  
 });
 
 export default router;
