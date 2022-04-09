@@ -4,9 +4,9 @@
  * Module dependencies.
  */
 
-import app from './Config/app';;
+import app from './Server/Config/app';
 import debug from 'debug';
-debug ('temp:server');
+debug('temp:server');
 import http from 'http';
 import { HttpError } from 'http-errors';
 
@@ -35,7 +35,8 @@ server.on('listening', onListening);
  * Normalize a port into a number, string, or false.
  */
 
-function normalizePort(val: string) {
+function normalizePort(val: string) 
+{
   const port = parseInt(val, 10);
 
   if (isNaN(port)) 
