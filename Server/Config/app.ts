@@ -14,6 +14,14 @@ import passport from 'passport'; // authentication
 import passportLocal from 'passport-local'; // authentication strategy
 import flash from 'connect-flash'; // auth messaging
 
+// modules to support JWT
+import cors from 'cors';
+import passportJWT from 'passport-jwt';
+
+// define JWT aliases
+let JWTStrategy = passportJWT.Strategy;
+let ExtractJWT = passportJWT.ExtractJwt;
+
 // authentication objects
 let localStrategy = passportLocal.Strategy; // alias
 // import User Model
@@ -21,7 +29,8 @@ import User from '../Models/user';
 
 // App Configuration
 import indexRouter from '../Routes/index';
-import usersRouter from '../Routes/users';
+import authRouter from "../Routes/auth";
+import contactListRouter from  "../Routes/contact-list";
 
 const app = express();
 
@@ -51,6 +60,12 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, '../../Client')));
 app.use(express.static(path.join(__dirname, '../../node_modules')));
 
+// Use images from public static folder
+app.use(express.static(path.join(__dirname, "../../public" )));
+
+// setup cors
+app.use(cors());
+
 // setup express session
 app.use(session({
   secret: DBConfig.SessionSecret,
@@ -72,8 +87,30 @@ passport.use(User.createStrategy());
 passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
 
+// JWT Options
+let jwtOptions =
+{
+  jwtFromRequest: ExtractJWT.fromAuthHeaderAsBearerToken(),
+  secretOrKey: DBConfig.SessionSecret
+}
+
+// define our JWT Strategy
+let strategy = new JWTStrategy(jwtOptions, function(jwt_payload, done){
+  User.findById(jwt_payload.id)
+    .then(user => {
+      return done(null, user);
+    })
+    .catch (err => {
+      return done(err, false);
+    });
+});
+
+passport.use(strategy);
+
+// Router Configuration
 app.use('/', indexRouter);
-app.use('/users', usersRouter);
+app.use('/', authRouter);
+app.use('/', contactListRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) 
@@ -91,7 +128,7 @@ app.use(function(err: createError.HttpError, req: express.Request,
 
   // render the error page
   res.status(err.status || 500);
-  res.render('error');
+  res.render('error', {message: err.message, error: err, title: '', page: '', displayName: '' });
 });
 
 export default app;
